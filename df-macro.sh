@@ -62,7 +62,7 @@ function process_macro_file() {
 cat > "$destination/$output_file_name" << EOF
 $(basename $output_file_name .mak)
 $(process_macro_file $macro_file)
-END of macro
+End of macro
 EOF
 
 printf " => output: $destination/$output_file_name\n"
