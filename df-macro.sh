@@ -30,12 +30,12 @@ output_file_name="$(basename $macro_file .macro).mak"
 mak_file_base="$(dirname $macro_file)"
 
 function process_mak_file() {
-	mak_file=$1
+	local mak_file=$1
 	sed -e "1 d;$ d" "$mak_file_base/$mak_file"
 }
 
 function process_macro_line() {
-	words=($1)
+	local words=($1)
 	case ${words[0]} in
 		mak)
 			process_mak_file "${1:4}"
@@ -47,7 +47,7 @@ function process_macro_line() {
 }
 
 function process_macro_file() {
-	macro_file=$1
+	local macro_file=$1
 
 	while IFS= read -r line; do
 		# ignore blank lines and comments
