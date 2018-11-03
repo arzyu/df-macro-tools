@@ -10,6 +10,9 @@ while [[ $# > 0 ]]; do
 			destination="$2"
 			shift
 			;;
+		--stdout)
+			stdout="yes"
+			;;
 		*)
 			macro_file="$1"
 			;;
@@ -26,6 +29,10 @@ if [[ -z $destination ]]; then
 	destination="$(pwd)"
 fi
 
+if [[ -z $stdout ]]; then
+	stdout="no"
+fi
+
 output_file_name="$(basename $macro_file .macro).mak"
 mak_file_base="$(dirname $macro_file)"
 
@@ -39,6 +46,9 @@ function process_macro_line() {
 	case ${words[0]} in
 		mak)
 			process_mak_file "${1:4}"
+			;;
+		macro)
+			$0 --stdout "$mak_file_base/${1:6}" | sed -e "1 d;$ d"
 			;;
 		*)
 			printf "\t\t$1\n\tEnd of group\n"
@@ -59,10 +69,15 @@ function process_macro_file() {
 	done < "$macro_file"
 }
 
-cat > "$destination/$output_file_name" <<- EOF
+read -r -d '' output <<-EOF
 	$(basename $output_file_name .mak)
 	$(process_macro_file $macro_file)
 	End of macro
 EOF
 
-printf " => output: $destination/$output_file_name\n"
+if [[ $stdout == "yes" ]]; then
+	printf "%s\n" "$output"
+else
+	printf "%s\n" "$output" > "$destination/$output_file_name"
+	printf " => output: $destination/$output_file_name\n"
+fi
