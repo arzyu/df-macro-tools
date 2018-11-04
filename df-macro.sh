@@ -49,18 +49,27 @@ function process_mak_file() {
 }
 
 function process_macro_line() {
-	local words=($1)
-	case ${words[0]} in
-		mak)
-			process_mak_file "${1:4}"
-			;;
-		macro)
-			$0 --stdout "$base_dir/${1:6}" | sed -e "1 d;$ d"
-			;;
-		*)
-			printf "\t\t$1\n\tEnd of group\n"
-			;;
-	esac
+	local line=$1
+
+	local pattern_mak='*([[:space:]])mak+([[:space:]])*'
+	local pattern_macro='*([[:space:]])macro+([[:space:]])*'
+
+	shopt -s extglob
+
+	if [[ $line == $pattern_mak ]]; then
+		## ${line##${pattern_mak:0:-1}} is supported after bash v4.2
+		local mak_file=${line##${pattern_mak:0:${#pattern_mak}-1}}
+		process_mak_file "$mak_file"
+
+	elif [[ $line == $pattern_macro ]]; then
+		local macro_file=${line##${pattern_macro:0:${#pattern_macro}-1}}
+		$0 --stdout "$base_dir/$macro_file" | sed -e "1 d;$ d"
+
+	else
+		printf "\t\t$1\n\tEnd of group\n"
+	fi
+
+	shopt -u extglob
 }
 
 function process_macro_file() {
