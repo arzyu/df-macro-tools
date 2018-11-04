@@ -10,6 +10,10 @@ while [[ $# > 0 ]]; do
 			destination="$2"
 			shift
 			;;
+		-o|--output-file)
+			output_file="$2"
+			shift
+			;;
 		--stdout)
 			stdout="yes"
 			;;
@@ -29,11 +33,14 @@ if [[ -z $destination ]]; then
 	destination="$(pwd)"
 fi
 
+if [[ -z $output_file ]]; then
+	output_file=$(basename $macro_file .macro).mak
+fi
+
 if [[ -z $stdout ]]; then
 	stdout="no"
 fi
 
-output_file_name="$(basename $macro_file .macro).mak"
 mak_file_base="$(dirname $macro_file)"
 
 function process_mak_file() {
@@ -70,7 +77,7 @@ function process_macro_file() {
 }
 
 read -r -d '' output <<-EOF
-	$(basename $output_file_name .mak)
+	$(basename $output_file .mak)
 	$(process_macro_file $macro_file)
 	End of macro
 EOF
@@ -78,6 +85,6 @@ EOF
 if [[ $stdout == "yes" ]]; then
 	printf "%s\n" "$output"
 else
-	printf "%s\n" "$output" > "$destination/$output_file_name"
-	printf " => output: $destination/$output_file_name\n"
+	printf "%s\n" "$output" > "$destination/$output_file"
+	printf " => output: $destination/$output_file\n"
 fi
