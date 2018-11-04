@@ -53,6 +53,7 @@ function process_macro_line() {
 
 	local pattern_mak='*([[:space:]])mak+([[:space:]])*'
 	local pattern_macro='*([[:space:]])macro+([[:space:]])*'
+	local pattern_n_times='*([[:space:]])[1-9]*([0-9])+([[:space:]])\*+([[:space:]])*'
 
 	shopt -s extglob
 
@@ -64,6 +65,16 @@ function process_macro_line() {
 	elif [[ $line == $pattern_macro ]]; then
 		local macro_file=${line##${pattern_macro:0:${#pattern_macro}-1}}
 		$0 --stdout "$base_dir/$macro_file" | sed -e "1 d;$ d"
+
+	elif [[ $line == $pattern_n_times ]]; then
+		local pattern_n_prefix='*([[:space:]])'
+		local pattern_n_suffix='+([[:space:]])\*+([[:space:]])*'
+		local prefix_removed_line=${line##$pattern_n_prefix}
+		local n=${prefix_removed_line%%$pattern_n_suffix}
+		local macro_line=${line##${pattern_n_times:0:${#pattern_n_times}-1}}
+		local compiled_content=$(process_macro_line "$macro_line")
+
+		printf "$compiled_content\n%.0s" $(seq 1 $n)
 
 	else
 		printf "\t\t$1\n\tEnd of group\n"
