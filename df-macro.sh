@@ -41,11 +41,11 @@ if [[ -z $stdout ]]; then
 	stdout="no"
 fi
 
-mak_file_base="$(dirname $macro_file)"
+base_dir=$(dirname $macro_file)
 
 function process_mak_file() {
 	local mak_file=$1
-	sed -e "1 d;$ d" "$mak_file_base/$mak_file"
+	sed -e "1 d;$ d" "$base_dir/$mak_file"
 }
 
 function process_macro_line() {
@@ -55,7 +55,7 @@ function process_macro_line() {
 			process_mak_file "${1:4}"
 			;;
 		macro)
-			$0 --stdout "$mak_file_base/${1:6}" | sed -e "1 d;$ d"
+			$0 --stdout "$base_dir/${1:6}" | sed -e "1 d;$ d"
 			;;
 		*)
 			printf "\t\t$1\n\tEnd of group\n"
