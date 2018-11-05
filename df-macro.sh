@@ -85,6 +85,7 @@ function process_macro_line() {
 	local pattern_macro='*([[:space:]])macro+([[:space:]])*'
 	local pattern_n_times='*([[:space:]])[1-9]*([0-9])+([[:space:]])\*+([[:space:]])*'
 	local pattern_rotate='*([[:space:]])rotate+([[:space:]])@(east|e|south|s|west|w)+([[:space:]])*'
+	local pattern_flip='*([[:space:]])flip+([[:space:]])@(horizontal|h|vertical|v)+([[:space:]])*'
 
 	shopt -s extglob
 
@@ -120,6 +121,23 @@ function process_macro_line() {
 			s|south) replacements=(DOWN LEFT UP RIGHT);;
 			w|west) replacements=(LEFT UP RIGHT DOWN);;
 			*) die "Unexcepted rotate: [$line]"
+		esac
+
+		transform_cursor "$compiled_content" "${replacements[@]}"
+
+	elif [[ $line == $pattern_flip ]]; then
+		local macro_line=$(trim_left "$line" "${pattern_flip:0:${#pattern_flip}-1}")
+		local compiled_content=$(process_macro_line "$macro_line")
+		local pattern_flip_axis_prefix='*([[:space:]])flip+([[:space:]])'
+		local pattern_flip_axis_suffix='+([[:space:]])*'
+		local flip_axis=$(trim "$line" "$pattern_flip_axis_prefix" "$pattern_flip_axis_suffix")
+
+		local replacements
+
+		case $flip_axis in
+			h|horizontal) replacements=(UP LEFT DOWN RIGHT);;
+			v|vertical) replacements=(DOWN RIGHT UP LEFT);;
+			*) die "Unexcepted flip: [$line]"
 		esac
 
 		transform_cursor "$compiled_content" "${replacements[@]}"
