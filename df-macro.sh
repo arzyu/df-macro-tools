@@ -64,12 +64,27 @@ function trim() {
 	printf "%s" "${left_trimmed%%$pattern_suffix}"
 }
 
+function transform_cursor() {
+	local content=$1; shift
+	local replacements=($@)
+
+	sed -n \
+		-e "/CURSOR_UP_Z/{p;d;}" \
+		-e "/CURSOR_DOWN_Z/{p;d;}" \
+		-e "/CURSOR_UP/{s/UP/${replacements[0]}/p;d;}" \
+		-e "/CURSOR_RIGHT/{s/RIGHT/${replacements[1]}/p;d;}" \
+		-e "/CURSOR_DOWN/{s/DOWN/${replacements[2]}/p;d;}" \
+		-e "/CURSOR_LEFT/{s/LEFT/${replacements[3]}/p;d;}" \
+		-e p <<< "$content"
+}
+
 function process_macro_line() {
 	local line=$1
 
 	local pattern_mak='*([[:space:]])mak+([[:space:]])*'
 	local pattern_macro='*([[:space:]])macro+([[:space:]])*'
 	local pattern_n_times='*([[:space:]])[1-9]*([0-9])+([[:space:]])\*+([[:space:]])*'
+	local pattern_rotate='*([[:space:]])rotate+([[:space:]])@(east|e|south|s|west|w)+([[:space:]])*'
 
 	shopt -s extglob
 
@@ -90,6 +105,24 @@ function process_macro_line() {
 		local compiled_content=$(process_macro_line "$macro_line")
 
 		printf "$compiled_content\n%.0s" $(seq 1 $n)
+
+	elif [[ $line == $pattern_rotate ]]; then
+		local macro_line=$(trim_left "$line" "${pattern_rotate:0:${#pattern_rotate}-1}")
+		local compiled_content=$(process_macro_line "$macro_line")
+		local pattern_rotate_to_prefix='*([[:space:]])rotate+([[:space:]])'
+		local pattern_rotate_to_suffix='+([[:space:]])*'
+		local rotate_to=$(trim "$line" "$pattern_rotate_to_prefix" "$pattern_rotate_to_suffix")
+
+		local replacements
+
+		case $rotate_to in
+			e|east) replacements=(RIGHT DOWN LEFT UP);;
+			s|south) replacements=(DOWN LEFT UP RIGHT);;
+			w|west) replacements=(LEFT UP RIGHT DOWN);;
+			*) die "Unexcepted rotate: [$line]"
+		esac
+
+		transform_cursor "$compiled_content" "${replacements[@]}"
 
 	else
 		printf "\t\t$1\n\tEnd of group\n"
