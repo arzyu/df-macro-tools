@@ -48,6 +48,22 @@ function process_mak_file() {
 	sed -e "1 d;$ d" "$base_dir/$mak_file"
 }
 
+function trim_left() {
+	local string=$1
+	local pattern_prefix=$2
+
+	printf "%s" "${string##$pattern_prefix}"
+}
+
+function trim() {
+	local string=$1
+	local pattern_prefix=$2
+	local pattern_suffix=$3
+
+	left_trimmed=$(trim_left "$string" "$pattern_prefix")
+	printf "%s" "${left_trimmed%%$pattern_suffix}"
+}
+
 function process_macro_line() {
 	local line=$1
 
@@ -59,19 +75,18 @@ function process_macro_line() {
 
 	if [[ $line == $pattern_mak ]]; then
 		## ${line##${pattern_mak:0:-1}} is supported after bash v4.2
-		local mak_file=${line##${pattern_mak:0:${#pattern_mak}-1}}
+		local mak_file=$(trim_left "$line" "${pattern_mak:0:${#pattern_mak}-1}")
 		process_mak_file "$mak_file"
 
 	elif [[ $line == $pattern_macro ]]; then
-		local macro_file=${line##${pattern_macro:0:${#pattern_macro}-1}}
+		local macro_file=$(trim_left "$line" "${pattern_macro:0:${#pattern_macro}-1}")
 		$0 --stdout "$base_dir/$macro_file" | sed -e "1 d;$ d"
 
 	elif [[ $line == $pattern_n_times ]]; then
 		local pattern_n_prefix='*([[:space:]])'
 		local pattern_n_suffix='+([[:space:]])\*+([[:space:]])*'
-		local prefix_removed_line=${line##$pattern_n_prefix}
-		local n=${prefix_removed_line%%$pattern_n_suffix}
-		local macro_line=${line##${pattern_n_times:0:${#pattern_n_times}-1}}
+		local n=$(trim "$line" "$pattern_n_prefix" "$pattern_n_suffix")
+		local macro_line=$(trim_left "$line" "${pattern_n_times:0:${#pattern_n_times}-1}")
 		local compiled_content=$(process_macro_line "$macro_line")
 
 		printf "$compiled_content\n%.0s" $(seq 1 $n)
