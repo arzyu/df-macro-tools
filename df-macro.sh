@@ -99,11 +99,11 @@ function process_macro_line() {
 		$0 --stdout "$base_dir/$macro_file" | sed -e "1 d;$ d"
 
 	elif [[ $line == $pattern_n_times ]]; then
+		local macro_line=$(trim_left "$line" "${pattern_n_times:0:${#pattern_n_times}-1}")
+		local compiled_content=$(process_macro_line "$macro_line")
 		local pattern_n_prefix='*([[:space:]])'
 		local pattern_n_suffix='+([[:space:]])\*+([[:space:]])*'
 		local n=$(trim "$line" "$pattern_n_prefix" "$pattern_n_suffix")
-		local macro_line=$(trim_left "$line" "${pattern_n_times:0:${#pattern_n_times}-1}")
-		local compiled_content=$(process_macro_line "$macro_line")
 
 		printf "$compiled_content\n%.0s" $(seq 1 $n)
 
