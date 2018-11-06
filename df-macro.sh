@@ -87,6 +87,7 @@ function process_macro_line() {
 	local pattern_rotate='*([[:space:]])rotate+([[:space:]])@(east|e|south|s|west|w)+([[:space:]])*'
 	local pattern_flip='*([[:space:]])flip+([[:space:]])@(horizontal|h|vertical|v)+([[:space:]])*'
 	local pattern_round='*([[:space:]])round+([[:space:]])@(2x|4x|4xr)+([[:space:]])*'
+	local pattern_use='*([[:space:]])use+([[:space:]])*'
 
 	shopt -s extglob
 
@@ -175,6 +176,10 @@ function process_macro_line() {
 			*) die "Unexcepted round: [$line]"
 		esac
 
+	elif [[ $line == $pattern_use ]]; then
+		local def_name=$(trim_left "$line" "${pattern_use:0:${#pattern_use}-1}")
+		process_macro_file <<< "$(get_def_content "$def_name")"
+
 	else
 		printf "\t\t%s\n\tEnd of group\n" "$(trim_left "$1" '*([[:space:]])')"
 	fi
@@ -195,9 +200,63 @@ function process_macro_file() {
 	done < "$macro_file"
 }
 
+function get_def_content() {
+	def_name=$1
+	sed -En \
+		-e "
+			:start
+			/[[:space:]]*def[[:space:]]+$def_name[[:space:]]+{/ {
+				/[[:space:]]*}/! {
+					N
+					b start
+				}
+				p
+			}
+		" \
+		<<< "$defs" | \
+	sed '1d; $d'
+}
+
+function get_defs() {
+	macro_file=${1:-/dev/stdin}
+	sed -En \
+		-e '
+			:start
+			/[[:space:]]*def[[:space:]]+.+[[:space:]]+{/ {
+				/[[:space:]]*}/! {
+					N
+					b start
+				}
+				p
+			}
+		' \
+		"$macro_file"
+}
+
+function prepare_macro_file() {
+	macro_file=${1:-/dev/stdin}
+	sed -En \
+		-e '
+			:start
+			/[[:space:]]*def[[:space:]]+.+[[:space:]]+{/ {
+				/[[:space:]]*}/! {
+					N
+					b start
+				}
+				d
+			}
+			p
+			d
+		' \
+		"$macro_file"
+}
+
+defs=$(get_defs $macro_file)
+prepared_macro_file=$(prepare_macro_file $macro_file)
+
 read -r -d '' output <<-EOF
 	$(basename $output_file .mak)
-	$(process_macro_file $macro_file)
+	$(process_macro_file <<< "$prepared_macro_file")
 	End of macro
 EOF
 
