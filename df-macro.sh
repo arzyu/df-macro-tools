@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 function die() {
 	echo "$@" >&2; exit 1
 }
@@ -185,7 +187,13 @@ function process_macro_line() {
 		process_macro_file <<< "$(get_def_content "$def_name")"
 
 	else
-		printf "\t\t%s\n\tEnd of group\n" "$(trim_left "$1" '*([[:space:]])')"
+		local raw_macro=$(trim_left "$1" '*([[:space:]])')
+
+		if [[ $raw_macro != [A-Z]* ]]; then
+			die "Syntax error: [$raw_macro]"
+		fi
+
+		printf "\t\t%s\n\tEnd of group\n" "$raw_macro"
 	fi
 
 	shopt -u extglob
@@ -193,15 +201,23 @@ function process_macro_line() {
 
 function process_macro_file() {
 	local macro_file=${1:-/dev/stdin}
+	local content=$(< "$macro_file")
+	local pattern_comment='*([[:space:]])#*'
 
-	while IFS= read -r line; do
-		# ignore blank lines and comments
-		if [[ -z $line || ${line:0:1} == "#" ]]; then
+	shopt -s extglob
+
+	for (( i=0, len=$(wc -l <<< "$content"); i < len; i++ )) ; do
+		IFS= read -r line
+
+		## ignore blank lines and comments
+		if [[ -z "$line" || "$line" == $pattern_comment ]]; then
 			continue
 		fi
 
 		process_macro_line "$line"
-	done < "$macro_file"
+	done <<< "$content"
+
+	shopt -u extglob
 }
 
 function get_def_content() {
@@ -258,7 +274,7 @@ function prepare_macro_file() {
 defs=$(get_defs $macro_file)
 prepared_macro_file=$(prepare_macro_file $macro_file)
 
-read -r -d '' output <<-EOF
+{ output=$(< /dev/stdin); } <<-EOF
 	$(basename $output_file .mak)
 	$(process_macro_file <<< "$prepared_macro_file")
 	End of macro
