@@ -176,7 +176,7 @@ function process_macro_line() {
 		esac
 
 	else
-		printf "\t\t$1\n\tEnd of group\n"
+		printf "\t\t%s\n\tEnd of group\n" "$(trim_left "$1" '*([[:space:]])')"
 	fi
 
 	shopt -u extglob
