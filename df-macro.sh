@@ -86,6 +86,7 @@ function process_macro_line() {
 	local pattern_n_times='*([[:space:]])[1-9]*([0-9])+([[:space:]])\*+([[:space:]])*'
 	local pattern_rotate='*([[:space:]])rotate+([[:space:]])@(east|e|south|s|west|w)+([[:space:]])*'
 	local pattern_flip='*([[:space:]])flip+([[:space:]])@(horizontal|h|vertical|v)+([[:space:]])*'
+	local pattern_round='*([[:space:]])round+([[:space:]])@(2x|4x|4xr)+([[:space:]])*'
 
 	shopt -s extglob
 
@@ -141,6 +142,32 @@ function process_macro_line() {
 		esac
 
 		transform_cursor "$compiled_content" "${replacements[@]}"
+
+	elif [[ $line == $pattern_round ]]; then
+		local macro_line=$(trim_left "$line" "${pattern_round:0:${#pattern_round}-1}")
+		local pattern_round_x_prefix='*([[:space:]])round+([[:space:]])'
+		local pattern_round_x_suffix='+([[:space:]])*'
+		local round_x=$(trim "$line" "$pattern_round_x_prefix" "$pattern_round_x_suffix")
+
+		case $round_x in
+			2x)
+				process_macro_line "$macro_line"
+				process_macro_line "rotate south $macro_line"
+				;;
+			4x)
+				process_macro_line "$macro_line"
+				process_macro_line "rotate east $macro_line"
+				process_macro_line "rotate south $macro_line"
+				process_macro_line "rotate west $macro_line"
+				;;
+			4xr)
+				process_macro_line "$macro_line"
+				process_macro_line "rotate west $macro_line"
+				process_macro_line "rotate south $macro_line"
+				process_macro_line "rotate east $macro_line"
+				;;
+			*) die "Unexcepted round: [$line]"
+		esac
 
 	else
 		printf "\t\t$1\n\tEnd of group\n"
