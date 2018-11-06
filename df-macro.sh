@@ -45,7 +45,7 @@ base_dir=$(dirname $macro_file)
 
 function process_mak_file() {
 	local mak_file=$1
-	sed -e "1 d;$ d" "$base_dir/$mak_file"
+	sed -e '1d; $d' "$base_dir/$mak_file"
 }
 
 function trim_left() {
@@ -97,7 +97,7 @@ function process_macro_line() {
 
 	elif [[ $line == $pattern_macro ]]; then
 		local macro_file=$(trim_left "$line" "${pattern_macro:0:${#pattern_macro}-1}")
-		$0 --stdout "$base_dir/$macro_file" | sed -e "1 d;$ d"
+		$0 --stdout "$base_dir/$macro_file" | sed -e '1d; $d'
 
 	elif [[ $line == $pattern_n_times ]]; then
 		local macro_line=$(trim_left "$line" "${pattern_n_times:0:${#pattern_n_times}-1}")
