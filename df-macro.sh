@@ -122,7 +122,6 @@ function process_macro_line() {
 			e|east) replacements=(RIGHT DOWN LEFT UP);;
 			s|south) replacements=(DOWN LEFT UP RIGHT);;
 			w|west) replacements=(LEFT UP RIGHT DOWN);;
-			*) die "Unexcepted rotate: [$line]"
 		esac
 
 		transform_cursor "$compiled_content" "${replacements[@]}"
@@ -139,7 +138,6 @@ function process_macro_line() {
 		case $flip_axis in
 			h|horizontal) replacements=(UP LEFT DOWN RIGHT);;
 			v|vertical) replacements=(DOWN RIGHT UP LEFT);;
-			*) die "Unexcepted flip: [$line]"
 		esac
 
 		transform_cursor "$compiled_content" "${replacements[@]}"
@@ -180,7 +178,6 @@ function process_macro_line() {
 					rotate east $macro_line
 				EOF
 				;;
-			*) die "Unexcepted round: [$line]"
 		esac
 
 	elif [[ $line == $pattern_use ]]; then
