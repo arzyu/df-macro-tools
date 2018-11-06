@@ -86,7 +86,7 @@ function process_macro_line() {
 	local pattern_n_times='*([[:space:]])[1-9]*([0-9])+([[:space:]])\*+([[:space:]])*'
 	local pattern_rotate='*([[:space:]])rotate+([[:space:]])@(east|e|south|s|west|w)+([[:space:]])*'
 	local pattern_flip='*([[:space:]])flip+([[:space:]])@(horizontal|h|vertical|v)+([[:space:]])*'
-	local pattern_round='*([[:space:]])round+([[:space:]])@(2x|4x|4xr)+([[:space:]])*'
+	local pattern_round='*([[:space:]])round?(+([[:space:]])?(2x|4x|4xr))+([[:space:]])*'
 	local pattern_use='*([[:space:]])use+([[:space:]])*'
 
 	shopt -s extglob
@@ -146,9 +146,16 @@ function process_macro_line() {
 
 	elif [[ $line == $pattern_round ]]; then
 		local macro_line=$(trim_left "$line" "${pattern_round:0:${#pattern_round}-1}")
+		local pattern_round_with_param='*([[:space:]])round+([[:space:]])@(2x|4x|4xr)+([[:space:]])*'
 		local pattern_round_x_prefix='*([[:space:]])round+([[:space:]])'
 		local pattern_round_x_suffix='+([[:space:]])*'
-		local round_x=$(trim "$line" "$pattern_round_x_prefix" "$pattern_round_x_suffix")
+		local round_x
+
+		if [[ $line == $pattern_round_with_param ]]; then
+			round_x=$(trim "$line" "$pattern_round_x_prefix" "$pattern_round_x_suffix")
+		fi
+
+		round_x=${round_x:-4x}
 
 		case $round_x in
 			2x)
