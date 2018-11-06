@@ -151,20 +151,26 @@ function process_macro_line() {
 
 		case $round_x in
 			2x)
-				process_macro_line "$macro_line"
-				process_macro_line "rotate south $macro_line"
+				process_macro_file <<-EOF
+					$macro_line
+					rotate south $macro_line
+				EOF
 				;;
 			4x)
-				process_macro_line "$macro_line"
-				process_macro_line "rotate east $macro_line"
-				process_macro_line "rotate south $macro_line"
-				process_macro_line "rotate west $macro_line"
+				process_macro_file <<-EOF
+					$macro_line
+					rotate east $macro_line
+					rotate south $macro_line
+					rotate west $macro_line
+				EOF
 				;;
 			4xr)
-				process_macro_line "$macro_line"
-				process_macro_line "rotate west $macro_line"
-				process_macro_line "rotate south $macro_line"
-				process_macro_line "rotate east $macro_line"
+				process_macro_file <<-EOF
+					$macro_line
+					rotate west $macro_line
+					rotate south $macro_line
+					rotate east $macro_line
+				EOF
 				;;
 			*) die "Unexcepted round: [$line]"
 		esac
@@ -177,7 +183,7 @@ function process_macro_line() {
 }
 
 function process_macro_file() {
-	local macro_file=$1
+	local macro_file=${1:-/dev/stdin}
 
 	while IFS= read -r line; do
 		# ignore blank lines and comments
