@@ -27,23 +27,23 @@ while [[ $# > 0 ]]; do
 	shift
 done
 
-if [[ -z $macro_file ]]; then
+if [[ -z "$macro_file" ]]; then
 	die "No input file *.macro"
 fi
 
-if [[ -z $destination ]]; then
+if [[ -z "$destination" ]]; then
 	destination="$(pwd)"
 fi
 
-if [[ -z $output_file ]]; then
+if [[ -z "$output_file" ]]; then
 	output_file=$(basename $macro_file .macro).mak
 fi
 
-if [[ -z $stdout ]]; then
+if [[ -z "$stdout" ]]; then
 	stdout="no"
 fi
 
-base_dir=$(dirname $macro_file)
+base_dir=$(dirname "$macro_file")
 
 function process_mak_file() {
 	local mak_file=$1
@@ -93,16 +93,16 @@ function process_macro_line() {
 
 	shopt -s extglob
 
-	if [[ $line == $pattern_mak ]]; then
+	if [[ "$line" == $pattern_mak ]]; then
 		## ${line##${pattern_mak:0:-1}} is supported after bash v4.2
 		local mak_file=$(trim_left "$line" "${pattern_mak:0:${#pattern_mak}-1}")
 		process_mak_file "$mak_file"
 
-	elif [[ $line == $pattern_macro ]]; then
+	elif [[ "$line" == $pattern_macro ]]; then
 		local macro_file=$(trim_left "$line" "${pattern_macro:0:${#pattern_macro}-1}")
 		$0 --stdout "$base_dir/$macro_file" | sed -e '1d; $d'
 
-	elif [[ $line == $pattern_n_times ]]; then
+	elif [[ "$line" == $pattern_n_times ]]; then
 		local macro_line=$(trim_left "$line" "${pattern_n_times:0:${#pattern_n_times}-1}")
 		local compiled_content=$(process_macro_line "$macro_line")
 		local pattern_n_prefix='*([[:space:]])'
@@ -111,7 +111,7 @@ function process_macro_line() {
 
 		printf "$compiled_content\n%.0s" $(seq 1 $n)
 
-	elif [[ $line == $pattern_rotate ]]; then
+	elif [[ "$line" == $pattern_rotate ]]; then
 		local macro_line=$(trim_left "$line" "${pattern_rotate:0:${#pattern_rotate}-1}")
 		local compiled_content=$(process_macro_line "$macro_line")
 		local pattern_rotate_to_prefix='*([[:space:]])rotate+([[:space:]])'
@@ -128,7 +128,7 @@ function process_macro_line() {
 
 		transform_cursor "$compiled_content" "${replacements[@]}"
 
-	elif [[ $line == $pattern_flip ]]; then
+	elif [[ "$line" == $pattern_flip ]]; then
 		local macro_line=$(trim_left "$line" "${pattern_flip:0:${#pattern_flip}-1}")
 		local compiled_content=$(process_macro_line "$macro_line")
 		local pattern_flip_axis_prefix='*([[:space:]])flip+([[:space:]])'
@@ -144,14 +144,14 @@ function process_macro_line() {
 
 		transform_cursor "$compiled_content" "${replacements[@]}"
 
-	elif [[ $line == $pattern_round ]]; then
+	elif [[ "$line" == $pattern_round ]]; then
 		local macro_line=$(trim_left "$line" "${pattern_round:0:${#pattern_round}-1}")
 		local pattern_round_with_param='*([[:space:]])round+([[:space:]])@(2x|4x|4xr)+([[:space:]])*'
 		local pattern_round_x_prefix='*([[:space:]])round+([[:space:]])'
 		local pattern_round_x_suffix='+([[:space:]])*'
 		local round_x
 
-		if [[ $line == $pattern_round_with_param ]]; then
+		if [[ "$line" == $pattern_round_with_param ]]; then
 			round_x=$(trim "$line" "$pattern_round_x_prefix" "$pattern_round_x_suffix")
 		fi
 
@@ -182,14 +182,14 @@ function process_macro_line() {
 				;;
 		esac
 
-	elif [[ $line == $pattern_use ]]; then
+	elif [[ "$line" == $pattern_use ]]; then
 		local def_name=$(trim_left "$line" "${pattern_use:0:${#pattern_use}-1}")
 		process_macro_file <<< "$(get_def_content "$def_name")"
 
 	else
 		local raw_macro=$(trim_left "$1" '*([[:space:]])')
 
-		if [[ $raw_macro != [A-Z]* ]]; then
+		if [[ "$raw_macro" != [A-Z]* ]]; then
 			die "Syntax error: [$raw_macro]"
 		fi
 
@@ -271,8 +271,8 @@ function prepare_macro_file() {
 		"$macro_file"
 }
 
-defs=$(get_defs $macro_file)
-prepared_macro_file=$(prepare_macro_file $macro_file)
+defs=$(get_defs "$macro_file")
+prepared_macro_file=$(prepare_macro_file "$macro_file")
 
 { output=$(< /dev/stdin); } <<-EOF
 	$(basename $output_file .mak)
@@ -280,7 +280,7 @@ prepared_macro_file=$(prepare_macro_file $macro_file)
 	End of macro
 EOF
 
-if [[ $stdout == "yes" ]]; then
+if [[ "$stdout" == "yes" ]]; then
 	printf "%s\n" "$output"
 else
 	printf "%s\n" "$output" > "$destination/$output_file"
