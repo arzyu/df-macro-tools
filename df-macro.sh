@@ -102,7 +102,7 @@ function process_macro_line() {
 
 		elif [[ "$use_what" == $pattern_macro_file ]]; then
 			## use file.macro
-			$0 --stdout "$base_dir/$use_what" | sed -e '1d; $d'
+			"$0" --stdout "$base_dir/$use_what" | sed -e '1d; $d'
 
 		else
 			## use defined-block
@@ -281,7 +281,7 @@ prepared_macro_file=$(prepare_macro_file "$macro_file")
 compiled_content=$(process_macro_file <<< "$prepared_macro_file")
 
 { output=$(< /dev/stdin); } <<-EOF
-	$(basename $output_file .mak)
+	$(basename "$output_file" .mak)
 	$compiled_content
 	End of macro
 EOF
