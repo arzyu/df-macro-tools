@@ -203,10 +203,12 @@ function process_macro_file() {
 	local macro_file=${1:-/dev/stdin}
 	local content=$(< "$macro_file")
 	local pattern_comment='*([[:space:]])#*'
+	local lines_count=$(wc -l <<< "$content")
+	local i
 
 	shopt -s extglob
 
-	for (( i=0, len=$(wc -l <<< "$content"); i < len; i++ )) ; do
+	for (( i=0; i < lines_count; i++ )) ; do
 		IFS= read -r line
 
 		## ignore blank lines and comments
