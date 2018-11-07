@@ -203,7 +203,7 @@ function process_macro_file() {
 	local macro_file=${1:-/dev/stdin}
 	local content=$(< "$macro_file")
 	local pattern_comment='*([[:space:]])#*'
-	local lines_count=$(wc -l <<< "$content")
+	local lines_count=$(wc -l <<< "$content" | tr -d ' ')
 	local i
 
 	shopt -s extglob
