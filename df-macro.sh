@@ -83,24 +83,31 @@ function transform_cursor() {
 function process_macro_line() {
 	local line=$1
 
-	local pattern_mak='*([[:space:]])mak+([[:space:]])*'
-	local pattern_macro='*([[:space:]])macro+([[:space:]])*'
+	local pattern_use='*([[:space:]])use+([[:space:]])*'
 	local pattern_n_times='*([[:space:]])[1-9]*([0-9])+([[:space:]])\*+([[:space:]])*'
 	local pattern_rotate='*([[:space:]])rotate+([[:space:]])@(east|e|south|s|west|w)+([[:space:]])*'
 	local pattern_flip='*([[:space:]])flip+([[:space:]])@(horizontal|h|vertical|v)+([[:space:]])*'
 	local pattern_round='*([[:space:]])round?(+([[:space:]])?(2x|4x|4xr))+([[:space:]])*'
-	local pattern_use='*([[:space:]])use+([[:space:]])*'
 
 	shopt -s extglob
 
-	if [[ "$line" == $pattern_mak ]]; then
-		## ${line##${pattern_mak:0:-1}} is supported after bash v4.2
-		local mak_file=$(trim_left "$line" "${pattern_mak:0:${#pattern_mak}-1}")
-		process_mak_file "$mak_file"
+	if [[ "$line" == $pattern_use ]]; then
+		local use_what=$(trim_left "$line" "${pattern_use:0:${#pattern_use}-1}")
+		local pattern_mak_file='*.mak'
+		local pattern_macro_file='*.macro'
 
-	elif [[ "$line" == $pattern_macro ]]; then
-		local macro_file=$(trim_left "$line" "${pattern_macro:0:${#pattern_macro}-1}")
-		$0 --stdout "$base_dir/$macro_file" | sed -e '1d; $d'
+		if [[ "$use_what" == $pattern_mak_file ]]; then
+			## use file.mak
+			process_mak_file "$use_what"
+
+		elif [[ "$use_what" == $pattern_macro_file ]]; then
+			## use file.macro
+			$0 --stdout "$base_dir/$use_what" | sed -e '1d; $d'
+
+		else
+			## use defined-block
+			process_macro_file <<< "$(get_def_content "$use_what")"
+		fi
 
 	elif [[ "$line" == $pattern_n_times ]]; then
 		local macro_line=$(trim_left "$line" "${pattern_n_times:0:${#pattern_n_times}-1}")
@@ -181,10 +188,6 @@ function process_macro_line() {
 				EOF
 				;;
 		esac
-
-	elif [[ "$line" == $pattern_use ]]; then
-		local def_name=$(trim_left "$line" "${pattern_use:0:${#pattern_use}-1}")
-		process_macro_file <<< "$(get_def_content "$def_name")"
 
 	else
 		local raw_macro=$(trim_left "$1" '*([[:space:]])')
