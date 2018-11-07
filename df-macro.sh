@@ -3,7 +3,7 @@
 set -e
 
 function die() {
-	echo "$@" >&2; exit 1
+	printf "\033[0;91m$@\033[0m\n" >&2; exit 1
 }
 
 while [[ $# > 0 ]]; do
@@ -273,10 +273,11 @@ function prepare_macro_file() {
 
 defs=$(get_defs "$macro_file")
 prepared_macro_file=$(prepare_macro_file "$macro_file")
+compiled_content=$(process_macro_file <<< "$prepared_macro_file")
 
 { output=$(< /dev/stdin); } <<-EOF
 	$(basename $output_file .mak)
-	$(process_macro_file <<< "$prepared_macro_file")
+	$compiled_content
 	End of macro
 EOF
 
