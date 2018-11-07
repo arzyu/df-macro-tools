@@ -6,50 +6,6 @@ function die() {
 	printf "\033[0;91m$@\033[0m\n" >&2; exit 1
 }
 
-while [[ $# > 0 ]]; do
-	case $1 in
-		-d|--destination)
-			destination="$2"
-			shift
-			;;
-		-o|--output-file)
-			output_file="$2"
-			shift
-			;;
-		--stdout)
-			stdout="yes"
-			;;
-		*)
-			macro_file="$1"
-			;;
-	esac
-
-	shift
-done
-
-if [[ -z "$macro_file" ]]; then
-	die "No input file *.macro"
-fi
-
-if [[ -z "$destination" ]]; then
-	destination="$(pwd)"
-fi
-
-if [[ -z "$output_file" ]]; then
-	output_file=$(basename $macro_file .macro).mak
-fi
-
-if [[ -z "$stdout" ]]; then
-	stdout="no"
-fi
-
-base_dir=$(dirname "$macro_file")
-
-function process_mak_file() {
-	local mak_file=$1
-	sed -e '1d; $d' "$base_dir/$mak_file"
-}
-
 function trim_left() {
 	local string=$1
 	local pattern_prefix=$2
@@ -78,6 +34,11 @@ function transform_cursor() {
 		-e "/CURSOR_DOWN/{s/DOWN/${replacements[2]}/p;d;}" \
 		-e "/CURSOR_LEFT/{s/LEFT/${replacements[3]}/p;d;}" \
 		-e p <<< "$content"
+}
+
+function process_mak_file() {
+	local mak_file=$1
+	sed -e '1d; $d' "$base_dir/$mak_file"
 }
 
 function process_macro_line() {
@@ -225,21 +186,22 @@ function process_macro_file() {
 	shopt -u extglob
 }
 
-function get_def_content() {
-	def_name=$1
+function prepare_macro_file() {
+	macro_file=${1:-/dev/stdin}
 	sed -En \
-		-e "
+		-e '
 			:start
-			/[[:space:]]*def[[:space:]]+$def_name[[:space:]]+{/ {
+			/[[:space:]]*def[[:space:]]+.+[[:space:]]+{/ {
 				/[[:space:]]*}/! {
 					N
 					b start
 				}
-				p
+				d
 			}
-		" \
-		<<< "$defs" | \
-	sed '1d; $d'
+			p
+			d
+		' \
+		"$macro_file"
 }
 
 function get_defs() {
@@ -258,23 +220,61 @@ function get_defs() {
 		"$macro_file"
 }
 
-function prepare_macro_file() {
-	macro_file=${1:-/dev/stdin}
+function get_def_content() {
+	def_name=$1
 	sed -En \
-		-e '
+		-e "
 			:start
-			/[[:space:]]*def[[:space:]]+.+[[:space:]]+{/ {
+			/[[:space:]]*def[[:space:]]+$def_name[[:space:]]+{/ {
 				/[[:space:]]*}/! {
 					N
 					b start
 				}
-				d
+				p
 			}
-			p
-			d
-		' \
-		"$macro_file"
+		" \
+		<<< "$defs" | \
+	sed '1d; $d'
 }
+
+while [[ $# > 0 ]]; do
+	case $1 in
+		-d|--destination)
+			destination="$2"
+			shift
+			;;
+		-o|--output-file)
+			output_file="$2"
+			shift
+			;;
+		--stdout)
+			stdout="yes"
+			;;
+		*)
+			macro_file="$1"
+			;;
+	esac
+
+	shift
+done
+
+if [[ -z "$macro_file" ]]; then
+	die "No input file *.macro"
+fi
+
+if [[ -z "$destination" ]]; then
+	destination="$(pwd)"
+fi
+
+if [[ -z "$output_file" ]]; then
+	output_file=$(basename $macro_file .macro).mak
+fi
+
+if [[ -z "$stdout" ]]; then
+	stdout="no"
+fi
+
+base_dir=$(dirname "$macro_file")
 
 defs=$(get_defs "$macro_file")
 prepared_macro_file=$(prepare_macro_file "$macro_file")
